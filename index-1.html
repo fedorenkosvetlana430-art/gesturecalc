@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#080b12">
+<title>GestureCalc</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;min-height:100%;background:#080b12;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+body{padding:max(12px,env(safe-area-inset-top)) 12px max(18px,env(safe-area-inset-bottom));}
+.app{width:min(560px,100%);margin:auto}
+header{display:flex;align-items:center;justify-content:space-between;margin:4px 0 14px}
+.brand{display:flex;gap:11px;align-items:center}
+.logo{width:43px;height:43px;border-radius:13px;background:linear-gradient(135deg,#7048ff,#a36cff);display:grid;place-items:center}
+.logo svg{width:24px}
+h1{font-size:18px;margin:0}.sub{font-size:11px;color:#8d97aa;margin-top:2px}
+.status{font-size:11px;color:#9ba5b6;border:1px solid #293142;border-radius:20px;padding:8px 10px;display:flex;gap:6px;align-items:center}
+.dot{width:7px;height:7px;border-radius:50%;background:#667085}.dot.on{background:#25d7a1;box-shadow:0 0 10px #25d7a1}
+.card{background:#121824;border:1px solid #273142;border-radius:22px;padding:14px;box-shadow:0 20px 60px #0006}
+.top{display:flex;justify-content:space-between;align-items:center;margin:2px 2px 12px}
+.title{font-weight:750;font-size:14px}.note{font-size:10px;color:#7f8a9d;margin-top:2px}
+button{border:0;color:#fff;cursor:pointer}
+.start{background:linear-gradient(135deg,#7048ff,#9b62ff);padding:11px 15px;border-radius:12px;font-weight:750;font-size:12px}
+.start:disabled{opacity:.6}
+.camera{position:relative;width:100%;aspect-ratio:3/4;background:#05070b;border-radius:18px;overflow:hidden;border:1px solid #283141}
+#video{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1)}
+.frame{position:absolute;inset:11%;border:1px solid #ffffff25;border-radius:24px;pointer-events:none}
+.corner{position:absolute;width:28px;height:28px;border-color:#fff;border-style:solid;opacity:.8}
+.c1{left:-1px;top:-1px;border-width:3px 0 0 3px;border-radius:10px 0 0}
+.c2{right:-1px;top:-1px;border-width:3px 3px 0 0;border-radius:0 10px 0 0}
+.c3{left:-1px;bottom:-1px;border-width:0 0 3px 3px;border-radius:0 0 0 10px}
+.c4{right:-1px;bottom:-1px;border-width:0 3px 3px 0;border-radius:0 0 10px 0}
+.cameraText{position:absolute;left:12px;bottom:12px;padding:7px 9px;border-radius:9px;background:#05070bcc;color:#aeb7c6;font-size:10px}
+.result{margin-top:12px;background:#090d15;border:1px solid #273142;border-radius:18px;padding:15px}
+.expr{font-size:17px;color:#929caf;min-height:25px;word-break:break-all}
+.answer{font-size:48px;font-weight:800;line-height:1.05;letter-spacing:-2px;word-break:break-all;margin-top:7px}
+.detect{display:flex;align-items:center;gap:10px;margin-top:14px}
+.symbol{width:45px;height:45px;border-radius:12px;background:#20283a;display:grid;place-items:center;font-size:21px;font-weight:800}
+.detect b{font-size:12px}.detect span{display:block;color:#818da0;font-size:10px;margin-top:2px}
+.conf{margin-top:12px}.confrow{display:flex;justify-content:space-between;color:#818da0;font-size:10px;margin-bottom:5px}
+.bar{height:6px;background:#202735;border-radius:10px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7048ff,#25d7a1);transition:.15s}
+.controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+.ctrl{background:#171e2b;border:1px solid #293243;border-radius:11px;padding:11px 7px;font-size:12px;font-weight:650}
+.ctrl.main{background:#222b40}
+.legend{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.key{font-size:9px;color:#9ba5b5;border:1px solid #252e3d;border-radius:8px;padding:6px 8px;background:#0e141f}
+.error{display:none;color:#ff9da7;background:#351820;border:1px solid #71303c;border-radius:10px;padding:10px;margin-top:10px;font-size:11px}
+.history{margin-top:12px}.historyhead{display:flex;justify-content:space-between;font-size:11px;color:#9da7b7;margin-bottom:6px}.historyhead b{color:#fff}.clear{color:#9c87ff}
+.historylist{display:flex;flex-direction:column;gap:5px}.hist{display:flex;justify-content:space-between;background:#0d131d;border:1px solid #202938;border-radius:9px;padding:8px 10px;font-size:11px}
+.empty{color:#677286;font-size:10px}
+@media(max-width:380px){.start{padding:10px;font-size:11px}.answer{font-size:42px}.camera{aspect-ratio:4/5}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+ <div class="brand">
+  <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M7 3v8M10 3v8M13 4v7M16 7v5M5 10c-2 0-2 3 0 5l3 4c.7 1 1.8 2 3.2 2H16c2.2 0 4-1.8 4-4v-5c0-1.1-.9-2-2-2h-1"/></svg></div>
+  <div><h1>GestureCalc</h1><div class="sub">Жестовый калькулятор</div></div>
+ </div>
+ <div class="status"><i class="dot" id="dot"></i><span id="status">Ожидание</span></div>
+</header>
+
+<section class="card">
+ <div class="top">
+  <div><div class="title">Камера</div><div class="note">Покажите жест в рамке</div></div>
+  <button class="start" id="start">Запустить</button>
+ </div>
+ <div class="camera">
+  <video id="video" autoplay playsinline muted></video>
+  <div class="frame"><i class="corner c1"></i><i class="corner c2"></i><i class="corner c3"></i><i class="corner c4"></i></div>
+  <div class="cameraText" id="cameraText">Камера выключена</div>
+ </div>
+ <div class="error" id="error"></div>
+
+ <div class="result">
+  <div class="expr" id="expr">0</div>
+  <div class="answer" id="answer">0</div>
+  <div class="detect">
+   <div class="symbol" id="symbol">—</div>
+   <div><b id="name">Нет жеста</b><span id="info">После запуска покажите 0–5, + или −</span></div>
+  </div>
+  <div class="conf"><div class="confrow"><span>Уверенность</span><span id="pct">0%</span></div><div class="bar"><i id="bar"></i></div></div>
+  <div class="controls">
+   <button class="ctrl main" id="eq">= Посчитать</button>
+   <button class="ctrl" id="back">⌫ Удалить</button>
+   <button class="ctrl" id="clear">C Очистить</button>
+  </div>
+  <div class="legend"><div class="key">0–5 цифры</div><div class="key">+ сложение</div><div class="key">− вычитание</div><div class="key">удерживайте жест</div></div>
+  <div class="history"><div class="historyhead"><b>История</b><span class="clear" id="clearHistory">Очистить</span></div><div class="historylist" id="history"><div class="empty">Пока нет вычислений</div></div></div>
+ </div>
+</section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.3/dist/teachablemachine-image.min.js"></script>
+<script>
+const MODEL="https://teachablemachine.withgoogle.com/models/gbirSVwIq/";
+let model=null, stream=null, active=false, paused=false, expr="";
+let candidate="", since=0, accepted="", acceptedAt=0;
+const HOLD=550, COOLDOWN=800, MIN=.72;
+const $=id=>document.getElementById(id);
+
+function err(t){$("error").style.display="block";$("error").textContent=t}
+function normalize(s){s=String(s).trim().toLowerCase();return ({plus:"+",minus:"-",плюс:"+",минус:"-"}[s]||s)}
+function render(){ $("expr").textContent=expr||"0"; if(!expr)$("answer").textContent="0" }
+
+async function startCamera(){
+ if(active)return;
+ $("start").disabled=true;$("start").textContent="Загрузка…";$("status").textContent="Загрузка модели…";$("cameraText").textContent="Подготовка…";$("error").style.display="none";
+ try{
+  if(!window.isSecureContext) throw new Error("SECURE");
+  if(!navigator.mediaDevices?.getUserMedia) throw new Error("MEDIA");
+  model=await tmImage.load(MODEL+"model.json",MODEL+"metadata.json");
+  try{
+   stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:720},height:{ideal:960}},audio:false});
+  }catch(e){
+   stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+  }
+  $("video").srcObject=stream;
+  await $("video").play();
+  active=true;$("dot").classList.add("on");$("status").textContent="Камера активна";$("cameraText").textContent="Покажите жест";
+  $("start").textContent="Камера активна";requestAnimationFrame(loop);
+ }catch(e){
+  console.error(e);$("start").disabled=false;$("start").textContent="Запустить";
+  $("status").textContent="Не запущена";$("cameraText").textContent="Камера выключена";
+  if(e.message==="SECURE") err("Откройте сайт через HTTPS. Камера не работает у обычного HTML-файла.");
+  else if(e.name==="NotAllowedError") err("Доступ к камере запрещён. Разрешите камеру для этого сайта в настройках браузера.");
+  else if(e.name==="NotFoundError") err("Камера на устройстве не найдена.");
+  else err("Не удалось открыть камеру. Проверьте разрешение камеры и интернет.");
+ }
+}
+
+async function loop(){
+ if(!active)return;
+ if(!paused) await predict();
+ requestAnimationFrame(loop);
+}
+async function predict(){
+ if($("video").readyState<2)return;
+ const p=await model.predict($("video"));
+ p.sort((a,b)=>b.probability-a.probability);
+ const top=p[0], s=normalize(top.className), pct=Math.round(top.probability*100);
+ $("pct").textContent=pct+"%";$("bar").style.width=pct+"%";$("symbol").textContent=["0","1","2","3","4","5","+","-"].includes(s)?s:"?";
+ $("name").textContent=top.className;$("info").textContent=pct>=72?"Жест распознан":"Покажите жест яснее";
+ if(top.probability<MIN||!["0","1","2","3","4","5","+","-"].includes(s))return;
+ const now=performance.now();
+ if(s!==candidate){candidate=s;since=now;return}
+ if(now-since>=HOLD&&(s!==accepted||now-acceptedAt>COOLDOWN)){accept(s);accepted=s;acceptedAt=now;since=now}
+}
+function accept(s){
+ if(s==="+"||s==="-"){
+  if(!expr){if(s==="-")expr="-"}
+  else if(/[+-]$/.test(expr))expr=expr.slice(0,-1)+s;
+  else expr+=s;
+ }else expr=expr==="0"?s:expr+s;
+ render();
+}
+function calculate(){
+ if(!expr||!/\d/.test(expr))return;
+ try{
+  const result=Function('"use strict";return ('+expr+')')();
+  if(!Number.isFinite(result))return;
+  $("answer").textContent=result; addHistory(expr,result);
+ }catch(e){}
+}
+function addHistory(a,b){
+ const empty=$("history").querySelector(".empty");if(empty)empty.remove();
+ const d=document.createElement("div");d.className="hist";d.innerHTML="<span>"+a.replaceAll("-","−")+"</span><b>= "+b+"</b>";$("history").prepend(d);
+ while($("history").children.length>6)$("history").lastElementChild.remove();
+}
+$("start").onclick=startCamera;
+$("eq").onclick=calculate;
+$("back").onclick=()=>{expr=expr.slice(0,-1);render()};
+$("clear").onclick=()=>{expr="";render()};
+$("clearHistory").onclick=()=>{$("history").innerHTML='<div class="empty">Пока нет вычислений</div>'};
+render();
+</script>
+</body>
+</html>
